@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { X, MapPin, Navigation, Search, CheckCircle2 } from "lucide-react";
 import { useLocationContext } from "../context/LocationContext";
-import { CHEFS } from "../data/mockData";
-
-const UNIQUE_LOCATIONS = Array.from(new Set(CHEFS.map(c => c.location.trim())));
+import { MOROCCAN_CITIES } from "../data/mockData";
 
 export default function LocationModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const { currentLocation, setCurrentLocation, detectLocation, isDetecting } = useLocationContext();
@@ -12,7 +10,7 @@ export default function LocationModal({ isOpen, onClose }: { isOpen: boolean, on
 
   if (!isOpen) return null;
 
-  const filteredLocations = UNIQUE_LOCATIONS.filter(loc => loc.toLowerCase().includes(search.toLowerCase()));
+  const filteredLocations = MOROCCAN_CITIES.filter(loc => loc.toLowerCase().includes(search.toLowerCase()));
 
   const handleSelect = (loc: string) => {
     setCurrentLocation(loc);

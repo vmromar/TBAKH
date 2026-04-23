@@ -1,3 +1,12 @@
+export const MOROCCAN_CITIES = [
+  "Casablanca", "Rabat", "Marrakech", "Fes", "Tangier", "Agadir", "Meknes", "Oujda", 
+  "Kenitra", "Tetouan", "Safi", "Mohammedia", "Khouribga", "Beni Mellal", "El Jadida", 
+  "Taza", "Nador", "Settat", "Ksar El Kebir", "Larache", "Khemisset", "Guelmim", 
+  "Berrechid", "Taourirt", "Ouarzazate", "Essaouira", "Ifrane", "Taroudant", "Al Hoceima", 
+  "Dakhla", "Laayoune", "Chefchaouen", "El Kelaa Des Sraghna", "Sidi Kacem", "Sidi Slimane", 
+  "Errachidia", "Tiznit", "Azrou", "Midelt", "Ouezzane"
+].sort();
+
 export interface Review {
   author: string;
   rating: number;
@@ -269,6 +278,66 @@ export const CHEFS: Chef[] = [
     ],
     reviews: [
       { author: "Fatima Z.", rating: 5, comment: "Authentic Oujdi taste! Outstanding service.", date: "3 weeks ago" }
+    ]
+  },
+  {
+    id: "chef-13",
+    name: "Chef Yasmine D.",
+    avatar: "https://images.unsplash.com/photo-1595273611465-398b18f0c29f?auto=format&fit=crop&q=80&w=200&h=200",
+    coverImage: "https://images.unsplash.com/photo-1605807646983-377bc5a76493?auto=format&fit=crop&q=80&w=1200&h=600",
+    location: "Kenitra, Morocco",
+    specialties: ["Seafood", "Paella", "Spanish Fusion"],
+    rating: 4.6,
+    reviewsCount: 92,
+    eventsCompleted: 120,
+    priceRange: { min: 2500, max: 6000 },
+    about: "Coastal fusion flavors directly from the Kenitra shores. Bringing the ultimate Paella party to your events.",
+    gallery: [
+      "https://images.unsplash.com/photo-1534080564583-6be75777b70a?auto=format&fit=crop&q=80&w=600&h=600",
+      "https://images.unsplash.com/photo-1559314809-0d155014e29e?auto=format&fit=crop&q=80&w=600&h=600"
+    ],
+    reviews: [
+      { author: "Ilham O.", rating: 4.5, comment: "Her Paella is better than what I had in Spain!", date: "1 month ago" }
+    ]
+  },
+  {
+    id: "chef-14",
+    name: "Chef Rachid W.",
+    avatar: "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&q=80&w=200&h=200",
+    coverImage: "https://images.unsplash.com/photo-1565557623262-b51c251d102e?auto=format&fit=crop&q=80&w=1200&h=600",
+    location: "Dakhla, Morocco",
+    specialties: ["Saharan Cuisine", "Fresh Catch", "Desert BBQs"],
+    rating: 5.0,
+    reviewsCount: 45,
+    eventsCompleted: 60,
+    priceRange: { min: 4000, max: 10000 },
+    about: "Exclusive Saharan dining experiences. Preparing fresh catches combined with ancient desert cooking techniques.",
+    gallery: [
+      "https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&q=80&w=600&h=600",
+      "https://images.unsplash.com/photo-1514326640560-7d063ef8aedc?auto=format&fit=crop&q=80&w=600&h=600"
+    ],
+    reviews: [
+      { author: "Marc F.", rating: 5, comment: "A truly once-in-a-lifetime dining experience in the dunes.", date: "2 months ago" }
+    ]
+  },
+  {
+    id: "chef-15",
+    name: "Chef Soufiane Z.",
+    avatar: "https://images.unsplash.com/photo-1614283233556-f35b0c801ef1?auto=format&fit=crop&q=80&w=200&h=200",
+    coverImage: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=1200&h=600",
+    location: "Essaouira, Morocco",
+    specialties: ["Pescatarian", "Vegan Coast", "Canapes"],
+    rating: 4.8,
+    reviewsCount: 167,
+    eventsCompleted: 220,
+    priceRange: { min: 2000, max: 4500 },
+    about: "Mogador's finest pescatarian and vegan chef. Perfect for boho-chic weddings and coastal retreats.",
+    gallery: [
+      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=600&h=600",
+      "https://images.unsplash.com/photo-1498837167922-41cfa6f31039?auto=format&fit=crop&q=80&w=600&h=600"
+    ],
+    reviews: [
+      { author: "Clara S.", rating: 5, comment: "The flavors of Essaouira encapsulated in elegant bites.", date: "1 week ago" }
     ]
   }
 ];

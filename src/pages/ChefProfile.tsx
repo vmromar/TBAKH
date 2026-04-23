@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Star, MapPin, CheckCircle, ChevronLeft, Calendar as CalendarIcon, MessageCircle, X, ChevronRight } from "lucide-react";
+import { Star, MapPin, CheckCircle, ChevronLeft, Calendar as CalendarIcon, MessageCircle, X, ChevronRight, User } from "lucide-react";
 import { CHEFS } from "../data/mockData";
 import BookingModal from "../components/BookingModal";
 import ChefCard from "../components/ChefCard";
 import { useLocationContext } from "../context/LocationContext";
+import { useReviews } from "../context/ReviewsContext";
 
 export default function ChefProfile() {
   const { id } = useParams();
@@ -17,9 +18,13 @@ export default function ChefProfile() {
   const { currentLocation } = useLocationContext();
   const currentCity = currentLocation.split(',')[0].trim().toLowerCase();
 
-  const [reviews, setReviews] = useState(chef?.reviews || []);
+  const { getReviews, addReview } = useReviews();
+  const reviews = chef ? getReviews(chef.id) : [];
+
   const [newReviewRating, setNewReviewRating] = useState(5);
   const [newReviewComment, setNewReviewComment] = useState("");
+  const [newReviewName, setNewReviewName] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,15 +39,28 @@ export default function ChefProfile() {
   const handleReviewSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newReviewComment.trim()) return;
+    
+    // Determine the author's name
+    let finalAuthor = "Anonymous";
+    if (!isAnonymous && newReviewName.trim()) {
+      finalAuthor = newReviewName.trim();
+    } else if (!isAnonymous) {
+      finalAuthor = "Guest";
+    }
+
     const review = {
-      author: "You",
+      author: finalAuthor,
       rating: newReviewRating,
       comment: newReviewComment,
       date: "Just now"
     };
-    setReviews([review, ...reviews]);
+    
+    addReview(chef.id, review);
+    
     setNewReviewComment("");
     setNewReviewRating(5);
+    setNewReviewName("");
+    setIsAnonymous(false);
   };
 
   // Find other chefs in the same city or user's city
@@ -138,21 +156,45 @@ export default function ChefProfile() {
                    <Star 
                      key={star} 
                      onClick={() => setNewReviewRating(star)} 
-                     className={`w-8 h-8 cursor-pointer transition-colors ${newReviewRating >= star ? 'fill-brand-primary text-brand-primary' : 'text-gray-200'}`} 
+                     className={`w-8 h-8 cursor-pointer transition-colors ${newReviewRating >= star ? 'fill-brand-primary text-brand-primary' : 'text-gray-200 hover:text-gray-300'}`} 
                    />
                 ))}
               </div>
+              
+              {!isAnonymous && (
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input 
+                    type="text"
+                    value={newReviewName}
+                    onChange={e => setNewReviewName(e.target.value)}
+                    placeholder="Your Name"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl pl-11 pr-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-brand-green focus:bg-white transition-colors"
+                  />
+                </div>
+              )}
+
+              <label className="flex items-center gap-2 cursor-pointer mt-2 text-sm font-bold text-gray-600 select-none">
+                <input 
+                  type="checkbox" 
+                  checked={isAnonymous} 
+                  onChange={e => setIsAnonymous(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-brand-green focus:ring-brand-green cursor-pointer accent-brand-green" 
+                />
+                Post anonymously
+              </label>
+
               <textarea 
                 value={newReviewComment}
                 onChange={e => setNewReviewComment(e.target.value)}
                 placeholder="Share your experience with this chef..."
                 rows={3}
-                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-brand-green focus:bg-white resize-none"
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-brand-green focus:bg-white resize-none mt-2"
               />
               <button 
                 type="submit" 
                 className="bg-gray-900 text-white font-black px-6 py-3 rounded-2xl text-sm hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!newReviewComment.trim()}
+                disabled={!newReviewComment.trim() || (!isAnonymous && !newReviewName.trim())}
               >
                 Submit Review
               </button>

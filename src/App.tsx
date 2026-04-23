@@ -23,6 +23,7 @@ import { FavoritesProvider } from "./context/FavoritesContext";
 import { BookingsProvider } from "./context/BookingsContext";
 import { AuthProvider } from "./context/AuthContext";
 import { LocationProvider } from "./context/LocationContext";
+import { ReviewsProvider } from "./context/ReviewsContext";
 
 export default function App() {
   return (
@@ -30,25 +31,27 @@ export default function App() {
       <AuthProvider>
         <FavoritesProvider>
           <BookingsProvider>
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Layout />}>
-                  <Route index element={<Home />} />
-                  <Route path="chef/:id" element={<ChefProfile />} />
-                  <Route path="login" element={<Login />} />
-                  <Route path="register" element={<Register />} />
-                  <Route path="create-profile" element={<CreateProfile />} />
-                  <Route path="forgot-password" element={<ForgotPassword />} />
-                  <Route path="favorites" element={<Favorites />} />
-                  <Route path="dashboard" element={<ChefDashboard />} />
-                  <Route path="personal" element={<Personal />} />
-                  <Route path="about" element={<About />} />
-                  <Route path="faq" element={<FAQ />} />
-                  <Route path="terms" element={<Terms />} />
-                  <Route path="privacy" element={<Privacy />} />
-                </Route>
-              </Routes>
-            </BrowserRouter>
+            <ReviewsProvider>
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Layout />}>
+                    <Route index element={<Home />} />
+                    <Route path="chef/:id" element={<ChefProfile />} />
+                    <Route path="login" element={<Login />} />
+                    <Route path="register" element={<Register />} />
+                    <Route path="create-profile" element={<CreateProfile />} />
+                    <Route path="forgot-password" element={<ForgotPassword />} />
+                    <Route path="favorites" element={<Favorites />} />
+                    <Route path="dashboard" element={<ChefDashboard />} />
+                    <Route path="personal" element={<Personal />} />
+                    <Route path="about" element={<About />} />
+                    <Route path="faq" element={<FAQ />} />
+                    <Route path="terms" element={<Terms />} />
+                    <Route path="privacy" element={<Privacy />} />
+                  </Route>
+                </Routes>
+              </BrowserRouter>
+            </ReviewsProvider>
           </BookingsProvider>
         </FavoritesProvider>
       </AuthProvider>
