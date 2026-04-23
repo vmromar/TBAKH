@@ -82,7 +82,11 @@ export default function Register() {
         navigate('/');
       } catch (err: any) {
         console.error(err);
-        setError(err.message || 'Failed to create account.');
+        if (err.code === 'auth/operation-not-allowed') {
+          setError('Email/password accounts are not enabled. Please enable "Email/Password" provider in the Firebase Console Authentication settings.');
+        } else {
+          setError(err.message || 'Failed to create account.');
+        }
       } finally {
         setIsSubmitting(false);
       }

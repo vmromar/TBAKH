@@ -24,7 +24,11 @@ export default function Login() {
       navigate('/personal');
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Failed to login');
+      if (err.code === 'auth/operation-not-allowed') {
+        setError('Email/password accounts are not enabled. Please enable "Email/Password" provider in the Firebase Console Authentication settings.');
+      } else {
+        setError('Invalid email or password');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +66,7 @@ export default function Login() {
         <div className="bg-white border border-gray-100 p-8 rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.04)]">
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm font-bold mb-4 border border-red-100 text-center">
-              Invalid email or password
+              {error}
             </div>
           )}
           <form className="space-y-5" onSubmit={handleLogin}>
