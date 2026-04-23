@@ -1,0 +1,8 @@
+{
+  "name": "Remix: tbakh.ma",
+  "description": "High-end marketplace platform connecting professional chefs specialized in weddings and events with clients.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": []
+}
