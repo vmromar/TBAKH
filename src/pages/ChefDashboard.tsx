@@ -1,13 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CheckCircle, XCircle, Clock, Calendar, Users, Phone, MapPin, Search } from "lucide-react";
 import { useBookings, Booking } from "../context/BookingsContext";
 import { CHEFS } from "../data/mockData";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function ChefDashboard() {
   const { getChefBookings, updateStatus, updatePrice } = useBookings();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'pending' | 'countered' | 'confirmed' | 'declined'>('pending');
 
-  // We automatically assume the logged-in chef is "chef-1" for this demo
+  useEffect(() => {
+    if (!user || user.role !== 'chef') {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
+  // We automatically assume the logged-in chef is "chef-1" for this demo bridging mock data,
+  // in a real app this would query the chef's real bookings and profile from Firestore by user.uid
   const MY_CHEF_ID = "chef-1";
   const myBookings = getChefBookings(MY_CHEF_ID);
   const me = CHEFS.find(c => c.id === MY_CHEF_ID);
@@ -28,7 +39,7 @@ export default function ChefDashboard() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">Orders Dashboard</h1>
-        <p className="text-gray-500 font-medium">Welcome back, {me?.name}. Manage your incoming event requests.</p>
+        <p className="text-gray-500 font-medium">Welcome back. Manage your incoming event requests.</p>
       </div>
 
       {/* Tabs */}

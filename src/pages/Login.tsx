@@ -1,37 +1,33 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChefHat, ArrowRight } from "lucide-react";
+import { ChefHat, ArrowRight, Loader2 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { useAuth } from "../context/AuthContext";
+import { auth } from "../firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function Login() {
   const [role, setRole] = useState<'client' | 'chef'>('client');
-  const [identifier, setIdentifier] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { login } = useAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Set simulated authentication
-    login({ role, identifier });
+    setError('');
+    setIsLoading(true);
 
-    // Send mailto request
-    const subject = `Login Attempt - ${role === 'chef' ? 'Chef' : 'Client'}`;
-    const body = `Role: ${role}
-Email or Phone: ${identifier}
-Password: ${password}
-
-(This is an automated login notification from tbakh.ma)`;
-
-    const mailtoLink = `mailto:omaaaaagh@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(mailtoLink, '_blank');
-    
-    // Redirect to personal profile page shortly after mailto protocol intent
-    setTimeout(() => {
-        navigate('/personal');
-    }, 500);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // Let the AuthContext handle state, just navigate
+      navigate('/personal');
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to login');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -64,10 +60,15 @@ Password: ${password}
         </div>
 
         <div className="bg-white border border-gray-100 p-8 rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.04)]">
+          {error && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm font-bold mb-4 border border-red-100 text-center">
+              Invalid email or password
+            </div>
+          )}
           <form className="space-y-5" onSubmit={handleLogin}>
             <div className="space-y-2">
-              <label className="text-[10px] uppercase tracking-widest font-black text-gray-400">Phone or Email</label>
-              <input value={identifier} onChange={e => setIdentifier(e.target.value)} required type="text" className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-brand-green focus:bg-white transition-colors" placeholder={role === 'chef' ? "chef@example.com" : "user@example.com"} />
+              <label className="text-[10px] uppercase tracking-widest font-black text-gray-400">Email Address</label>
+              <input value={email} onChange={e => setEmail(e.target.value)} required type="email" className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-brand-green focus:bg-white transition-colors" placeholder={role === 'chef' ? "chef@example.com" : "user@example.com"} />
             </div>
             
             <div className="space-y-2">
@@ -78,8 +79,8 @@ Password: ${password}
               <input value={password} onChange={e => setPassword(e.target.value)} required type="password" className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-brand-green focus:bg-white transition-colors" placeholder="••••••••" />
             </div>
 
-            <button type="submit" className="w-full bg-brand-primary text-gray-900 shadow-[0_4px_14px_rgba(255,204,0,0.4)] font-black py-4 rounded-2xl mt-4 hover:scale-[1.02] active:scale-[0.98] transition-all flex justify-center items-center gap-2">
-              Sign In <ArrowRight className="w-4 h-4" />
+            <button disabled={isLoading} type="submit" className="w-full disabled:opacity-70 disabled:hover:scale-100 bg-brand-primary text-gray-900 shadow-[0_4px_14px_rgba(255,204,0,0.4)] font-black py-4 rounded-2xl mt-4 hover:scale-[1.02] active:scale-[0.98] transition-all flex justify-center items-center gap-2">
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Sign In <ArrowRight className="w-4 h-4" /></>}
             </button>
           </form>
 

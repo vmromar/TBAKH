@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { ChefHat, Search, User, Heart, MapPin, ChevronDown } from "lucide-react";
+import { ChefHat, Search, User, Heart, MapPin, ChevronDown, Loader2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../context/AuthContext";
 import { useLocationContext } from "../context/LocationContext";
@@ -8,7 +8,7 @@ import LocationModal from "./LocationModal";
 
 export default function Layout() {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { currentLocation } = useLocationContext();
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   
@@ -55,7 +55,9 @@ export default function Layout() {
             <Link to="/favorites" className="text-sm font-semibold text-gray-600 hover:text-brand-green transition-colors">Saved</Link>
             <div className="h-4 w-[1px] bg-gray-200"></div>
             
-            {user ? (
+            {loading ? (
+                <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+            ) : user ? (
                 <Link to="/personal" className="text-sm font-bold text-gray-900 hover:text-brand-green transition-colors flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-brand-green/10 text-brand-green flex items-center justify-center">
                     <User className="w-4 h-4" />
@@ -162,7 +164,12 @@ export default function Layout() {
           <span className="text-[10px] uppercase font-bold">Saved</span>
         </Link>
         
-        {user ? (
+        {loading ? (
+             <div className="flex flex-col items-center gap-1 text-gray-400">
+               <Loader2 className="w-6 h-6 animate-spin" />
+               <span className="text-[10px] uppercase font-bold">Profile</span>
+             </div>
+        ) : user ? (
            <Link to="/personal" className={cn("flex flex-col items-center gap-1", location.pathname === '/personal' ? "text-brand-green" : "text-gray-400")}>
             <div className="relative">
               <User className="w-6 h-6" />

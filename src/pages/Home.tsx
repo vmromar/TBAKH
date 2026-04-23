@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Search, SlidersHorizontal, ChefHat, Sparkles, MapPin } from "lucide-react";
+import { Search, SlidersHorizontal, ChefHat, Sparkles, MapPin, Award, Star } from "lucide-react";
 import { motion } from "motion/react";
+import { Link } from "react-router-dom";
 import { CHEFS } from "../data/mockData";
 import ChefCard from "../components/ChefCard";
 
@@ -50,6 +51,7 @@ export default function Home() {
   });
 
   const displayedChefs = filteredChefs.slice(0, visibleCount);
+  const chefOfTheWeek = CHEFS.find(c => c.id === "chef-1");
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-6 pb-24 selection:bg-brand-primary selection:text-gray-900">
@@ -158,6 +160,60 @@ export default function Home() {
               </div>
           </div>
       </div>
+
+      {/* Chef of the Week */}
+      {chefOfTheWeek && searchCity === "" && activeCategory === "All" && (
+        <div className="mb-10 w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="flex items-center gap-2 mb-4 px-2">
+            <Award className="w-6 h-6 text-brand-primary -mt-1" />
+            <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">Chef of the Week</h2>
+          </div>
+          <Link to={`/chef/${chefOfTheWeek.id}`} className="block group">
+            <div className="bg-gray-900 rounded-[32px] overflow-hidden shadow-xl flex flex-col sm:flex-row relative transform transition-transform group-hover:scale-[1.01] duration-300">
+              {/* Image Section */}
+              <div className="w-full sm:w-5/12 h-56 sm:h-auto relative overflow-hidden shrink-0">
+                <img 
+                  src={chefOfTheWeek.coverImage} 
+                  alt={chefOfTheWeek.name}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent sm:bg-gradient-to-r sm:from-transparent sm:to-gray-900"></div>
+                <div className="absolute top-4 left-4 bg-brand-primary text-gray-900 text-xs font-black px-3 py-1.5 rounded-full z-10 flex items-center gap-1.5 shadow-lg">
+                  <Sparkles className="w-3.5 h-3.5" /> Featured
+                </div>
+              </div>
+              
+              {/* Content Section */}
+              <div className="flex-1 p-6 sm:p-8 flex flex-col justify-center relative z-10 bg-gray-900">
+                <div className="flex justify-between items-start mb-2 mt-4 sm:mt-0">
+                  <h3 className="font-black text-white text-2xl sm:text-3xl tracking-tight pr-4">{chefOfTheWeek.name}</h3>
+                  <div className="flex items-center gap-1.5 bg-gray-800 px-3 py-1.5 rounded-xl text-white font-bold shrink-0">
+                    <Star className="w-4 h-4 fill-brand-primary text-brand-primary" />
+                    <span>{chefOfTheWeek.rating}</span>
+                  </div>
+                </div>
+                
+                <p className="text-gray-400 font-medium text-sm sm:text-base mb-4">
+                  {chefOfTheWeek.specialties.join(" • ")}
+                </p>
+                
+                <p className="text-gray-300 text-sm sm:text-base line-clamp-2 md:line-clamp-3 mb-6">
+                  {chefOfTheWeek.about}
+                </p>
+                
+                <div className="flex items-center gap-2 text-gray-400 text-sm mt-auto font-bold">
+                  <MapPin className="w-4 h-4" />
+                  <span>{chefOfTheWeek.location}</span>
+                  <span className="hidden sm:inline mx-2 text-gray-700">•</span>
+                  <span className="text-brand-primary bg-brand-primary/10 px-3 py-1 rounded-xl hidden sm:inline-flex items-center">
+                    From {chefOfTheWeek.priceRange.min} MAD
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Link>
+        </div>
+      )}
 
       {/* Grid - Capsule Stack */}
       <div className="flex flex-col gap-6 relative z-0">

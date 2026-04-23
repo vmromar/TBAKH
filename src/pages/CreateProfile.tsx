@@ -1,52 +1,102 @@
 import { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import { ChefHat, ArrowRight, ArrowLeft } from "lucide-react";
+import { ChefHat, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
+import { auth, db } from "../firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { useAuth } from "../context/AuthContext";
+import { tempRegistrationStore } from "../lib/tempStore";
 
 export default function CreateProfile() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { updateUserContext } = useAuth();
+  
   // Default to empty strings if approached directly without state
-  const { name = '', phone = '', password = '', idUploaded = false, idFileName = '' } = location.state || {};
+  const { name = '', email = '', password = '', idUploaded = false, idFileName = '' } = location.state || {};
 
   const [city, setCity] = useState('');
   const [specialties, setSpecialties] = useState('');
   const [minPrice, setMinPrice] = useState('1000');
   const [maxPrice, setMaxPrice] = useState('5000');
   const [about, setAbout] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Construct payload
-    const subject = `New Chef Partner Profile Registration!`;
-    const body = `New Chef Partner Profile!
-Name: ${name || 'N/A'}
-Phone/Email: ${phone || 'N/A'}
-Password: ${password || 'N/A'}
-ID Verified: ${idUploaded ? 'Yes' : 'No'}
-File Uploaded: ${idFileName || 'N/A'}
+    if (!email || !password) {
+      setError("Missing account details. Please start over from the registration page.");
+      return;
+    }
 
--- Profile Info --
-City: ${city}
-Specialties: ${specialties}
-Pricing: ${minPrice} - ${maxPrice} MAD
-About: ${about}`;
+    setError('');
+    setIsSubmitting(true);
 
-    // 1. Send silent WhatsApp message via wa.me protocol (Wait for tab sequence)
-    const whatsappMessage = encodeURIComponent(body);
-    window.open(`https://wa.me/212619003275?text=${whatsappMessage}`, '_blank');
-    
-    // 2. Queue Email submission using setTimeout (to not block the WhatsApp tab)
-    setTimeout(() => {
-        const mailtoLink = `mailto:omaaaaagh@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        window.open(mailtoLink, '_self'); // Use _self for mailto in setTimeout to prevent popup blockers
+    try {
+      // 1. Create the Auth account
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // 2. Add extra chef data to Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        name,
+        email,
+        phone: tempRegistrationStore.phone,
+        role: 'chef',
+        createdAt: new Date().toISOString(),
+        idVerified: idUploaded,
+        profile: {
+          city,
+          specialties: specialties.split(',').map(s => s.trim()).filter(Boolean),
+          priceRange: { min: Number(minPrice), max: Number(maxPrice) },
+          about
+        }
+      });
+
+      // 3. Send email to Admin
+      try {
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('email', email);
+        formData.append('phone', tempRegistrationStore.phone);
+        formData.append('city', city);
+        formData.append('specialties', specialties);
         
-        // 3. Clear queue and verify
-        setTimeout(() => {
-          alert("Profile info sent! We'll review and publish your profile soon.");
-          navigate('/');
-        }, 800);
-    }, 500);
+        if (tempRegistrationStore.idFile) {
+           formData.append('idCard', tempRegistrationStore.idFile);
+        }
+
+        await fetch('/api/send-chef-registration', {
+          method: 'POST',
+          body: formData
+        });
+        
+        // Clean up store
+        tempRegistrationStore.idFile = null;
+        tempRegistrationStore.phone = '';
+
+      } catch (emailErr) {
+        console.error("Failed to send admin email, but account was created.", emailErr);
+      }
+
+      // 4. Set the context manually to ensure immediate redirect
+      updateUserContext({
+          uid: user.uid,
+           email: user.email || '',
+           role: 'chef',
+           identifier: user.email || ''
+      });
+
+      // Navigate to dashboard
+      navigate('/dashboard');
+
+    } catch (err: any) {
+       console.error(err);
+       setError(err.message || 'Failed to create chef profile.');
+    } finally {
+       setIsSubmitting(false);
+    }
   };
 
   return (
@@ -62,6 +112,11 @@ About: ${about}`;
         </div>
 
         <div className="bg-white border border-gray-100 p-8 sm:p-10 rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.04)]">
+          {error && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm font-bold mb-6 border border-red-100 text-center">
+              {error}
+            </div>
+          )}
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -89,8 +144,8 @@ About: ${about}`;
             </div>
 
             <div className="pt-2">
-              <button type="submit" className="w-full bg-brand-primary text-gray-900 font-black shadow-[0_4px_14px_rgba(255,204,0,0.4)] py-4 rounded-2xl hover:scale-[1.01] active:scale-[0.99] transition-all flex justify-center items-center gap-2">
-                Launch My Profile <ArrowRight className="w-4 h-4" />
+              <button disabled={isSubmitting} type="submit" className="w-full disabled:opacity-70 disabled:hover:scale-100 bg-brand-primary text-gray-900 font-black shadow-[0_4px_14px_rgba(255,204,0,0.4)] py-4 rounded-2xl hover:scale-[1.01] active:scale-[0.99] transition-all flex justify-center items-center gap-2">
+                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Launch My Profile <ArrowRight className="w-4 h-4" /></>}
               </button>
             </div>
           </form>

@@ -1,21 +1,25 @@
 import { useState } from "react";
-import { X, Calendar as CalendarIcon, MapPin, Users, CheckCircle, Minus, Plus } from "lucide-react";
+import { X, Calendar as CalendarIcon, MapPin, Users, CheckCircle, Minus, Plus, Loader2 } from "lucide-react";
 import { Chef } from "../data/mockData";
 import { useBookings } from "../context/BookingsContext";
 
 export default function BookingModal({ chef, isOpen, onClose }: { chef: Chef, isOpen: boolean, onClose: () => void }) {
   const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
   const [guests, setGuests] = useState("50");
   const [eventType, setEventType] = useState("Wedding");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [locationStr, setLocationStr] = useState("");
   const [priceOffer, setPriceOffer] = useState(chef.priceRange.min);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const { addBooking } = useBookings();
 
   if (!isOpen) return null;
 
-  const handleBook = (e: React.FormEvent) => {
+  const handleBook = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // 1. Add to context so chef can see it in dashboard
@@ -30,26 +34,48 @@ export default function BookingModal({ chef, isOpen, onClose }: { chef: Chef, is
       proposedPrice: priceOffer
     });
 
-    // 2. Show Success
+    // 2. Show loading
+    setIsSubmitting(true);
+    
+    try {
+       // Send Email API
+       await fetch('/api/send-booking', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+             clientName: name,
+             email: email,
+             phone: phone,
+             chefName: chef.name,
+             date: date,
+             time: time,
+             guests: guests,
+             location: locationStr
+          })
+       });
+    } catch (err) {
+       console.error("Booking email API failed, continuing to whatsapp", err);
+    }
+
+    setIsSubmitting(false);
     setIsSuccess(true);
-    
-    // 3. Keep original WhatsApp functionality as requested, but switch to omaaaaagh@gmail.com
-    const subject = `New Booking Request for ${chef.name}`;
-    const message = `*tbakh.ma Booking Offer*
-    
-*Client:* ${name}
-*Phone:* ${phone}
-*Chef:* ${chef.name}
-*Event Date:* ${date}
-*Event Type:* ${eventType} (${guests} guests)
-*Proposed Price:* ${priceOffer} MAD
-*Payment:* Cash on Service`;
+
+    // 3. Keep WhatsApp functionality
+    const message = `Salam 👋 Tbakh.ma booking:
+Client: ${name}
+Phone: ${phone}
+Chef: ${chef.name}
+Date: ${date}
+Time: ${time}
+People: ${guests}
+Location: ${locationStr}`;
 
     setTimeout(() => {
-        // Send WhatsApp message to the system handler (simulating the phone number opening or using user's whatsapp)
-        window.location.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
         setIsSuccess(false);
         onClose();
+        window.open(`https://wa.me/212619003275?text=${encodeURIComponent(message)}`, '_blank');
     }, 1500);
   };
 
@@ -63,8 +89,8 @@ export default function BookingModal({ chef, isOpen, onClose }: { chef: Chef, is
                <div className="w-20 h-20 bg-brand-primary rounded-full flex items-center justify-center mb-6 animate-bounce">
                   <CheckCircle className="w-10 h-10 text-gray-900" />
                </div>
-               <h2 className="text-2xl font-black text-gray-900 mb-2">Offer Sent!</h2>
-               <p className="text-gray-500 font-medium">Redirecting you to WhatsApp to confirm with the chef...</p>
+               <h2 className="text-2xl font-black text-gray-900 mb-2">Request Sent!</h2>
+               <p className="text-gray-500 font-medium">Opening WhatsApp...</p>
            </div>
         ) : (
             <>
@@ -106,16 +132,36 @@ export default function BookingModal({ chef, isOpen, onClose }: { chef: Chef, is
                     <input required type="text" value={name} onChange={e => setName(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green transition-shadow" placeholder="John Doe" />
                     </div>
                     <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-wider font-bold text-gray-500">Phone</label>
-                    <input required type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green transition-shadow" placeholder="+212 ..." />
+                    <label className="text-xs uppercase tracking-wider font-bold text-gray-500">Email Address</label>
+                    <input required type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green transition-shadow" placeholder="john@example.com" />
                     </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                    <label className="text-xs uppercase tracking-wider font-bold text-gray-500">Phone</label>
+                    <input required type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green transition-shadow" placeholder="+212 ..." />
+                    </div>
+                    <div className="space-y-2">
+                    <label className="text-xs uppercase tracking-wider font-bold text-gray-500">Location Details</label>
+                    <input required type="text" value={locationStr} onChange={e => setLocationStr(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green transition-shadow" placeholder="e.g. Hay Riad, Rabat" />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
                     <label className="text-xs uppercase tracking-wider font-bold text-gray-500">Event Date</label>
                     <div className="relative">
                     <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input required type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-4 py-3 text-sm font-semibold outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green transition-shadow" />
+                    </div>
+                    </div>
+
+                    <div className="space-y-2">
+                    <label className="text-xs uppercase tracking-wider font-bold text-gray-500">Event Time</label>
+                    <div className="relative">
+                    <input required type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green transition-shadow" />
+                    </div>
                     </div>
                 </div>
 
@@ -138,8 +184,8 @@ export default function BookingModal({ chef, isOpen, onClose }: { chef: Chef, is
                     </div>
                 </div>
 
-                <button type="submit" className="w-full bg-brand-primary text-gray-900 shadow-[0_4px_14px_rgba(255,204,0,0.4)] font-black text-lg py-4 rounded-xl mt-2 hover:scale-[1.02] active:scale-[0.98] transition-transform">
-                    Send Offer & Proceed
+                <button disabled={isSubmitting} type="submit" className="w-full disabled:opacity-70 disabled:hover:scale-100 bg-brand-primary text-gray-900 shadow-[0_4px_14px_rgba(255,204,0,0.4)] font-black text-lg py-4 rounded-xl mt-2 hover:scale-[1.02] active:scale-[0.98] transition-transform flex justify-center items-center gap-2">
+                    {isSubmitting ? <><Loader2 className="w-5 h-5 animate-spin"/> Processing...</> : "Send Offer & Proceed"}
                 </button>
                 <p className="text-center text-[10px] text-gray-400 uppercase font-bold tracking-wider mt-2">Cash on Service • No Credit Card Required</p>
                 </form>

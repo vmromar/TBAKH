@@ -1,59 +1,91 @@
 import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChefHat, ArrowRight, UploadCloud, CheckCircle2, Loader2, FileBadge } from "lucide-react";
+import { ChefHat, ArrowRight, CheckCircle2, Loader2, FileBadge } from "lucide-react";
 import { cn } from "../lib/utils";
+import { auth, db } from "../firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { useAuth } from "../context/AuthContext";
+import { tempRegistrationStore } from "../lib/tempStore";
 
 export default function Register() {
   const [role, setRole] = useState<'client' | 'chef'>('client');
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [idUploaded, setIdUploaded] = useState(false);
   const [idFileName, setIdFileName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const navigate = useNavigate();
+  const { updateUserContext } = useAuth();
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setIsUploading(true);
-      // Simulate secure upload and encryption delay
+      
+      // Save directly to our temp memory store to pass to the next step
+      tempRegistrationStore.idFile = file;
+      
+      // Simulate secure check
       setTimeout(() => {
         setIdFileName(file.name);
         setIsUploading(false);
         setIdUploaded(true);
-      }, 2000);
+      }, 1000);
     }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    
+    // Save phone to temp store for emails later
+    tempRegistrationStore.phone = phone;
     
     if (role === 'chef') {
       if (!idUploaded) {
-        alert("Please upload your National ID or Passport to continue.");
+        setError("Please upload your National ID or Passport to continue.");
         return;
       }
-      // Proceed to create profile step instead of sending right away
-      navigate('/create-profile', { state: { name, phone, password, idUploaded, idFileName } });
+      // Proceed to create profile step with email and password state
+      // (Account creation will happen in the next step for chefs to ensure profile is created atomically)
+      navigate('/create-profile', { state: { name, email, password, idUploaded, idFileName } });
     } else {
-      const subject = `New Client Registration - tbakh.ma`;
-      const body = `New Client Registration:
-Name: ${name}
-Phone/Email: ${phone}
-Password: ${password}
+      setIsSubmitting(true);
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Store user metadata in Firestore
+        await setDoc(doc(db, 'users', user.uid), {
+          name,
+          email,
+          phone,
+          role: 'client',
+          createdAt: new Date().toISOString()
+        });
 
-(This is an automated signup notification)`;
-      
-      const mailtoLink = `mailto:omaaaaagh@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      window.open(mailtoLink, '_blank');
-      
-      // Clear password 
-      setPassword('');
-      alert("Account created successfully!");
-      navigate('/');
+        // Set the context manually to ensure immediate redirect
+        updateUserContext({
+           uid: user.uid,
+           email: user.email || '',
+           role: 'client',
+           identifier: user.email || ''
+        });
+
+        navigate('/');
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message || 'Failed to create account.');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -78,15 +110,20 @@ Password: ${password}
             I'm a Client
           </button>
           <button 
-            type="button" 
-            onClick={() => setRole('chef')}
-            className={cn("flex-1 py-3 text-sm font-black rounded-full transition-all", role === 'chef' ? "bg-gray-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50")}
+             type="button" 
+             onClick={() => setRole('chef')}
+             className={cn("flex-1 py-3 text-sm font-black rounded-full transition-all", role === 'chef' ? "bg-gray-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50")}
           >
-            I'm a Chef
+             I'm a Chef
           </button>
         </div>
 
         <div className="bg-white border border-gray-100 p-8 rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.04)]">
+          {error && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm font-bold mb-4 border border-red-100 text-center">
+              {error}
+            </div>
+          )}
           <form className="space-y-5" onSubmit={handleRegister}>
             <div className="space-y-2">
               <label className="text-[10px] uppercase tracking-widest font-black text-gray-400">Full Name</label>
@@ -94,20 +131,25 @@ Password: ${password}
             </div>
             
             <div className="space-y-2">
-              <label className="text-[10px] uppercase tracking-widest font-black text-gray-400">Email or Phone</label>
-              <input required value={phone} onChange={e => setPhone(e.target.value)} type="text" className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-brand-green focus:bg-white transition-colors" placeholder="user@example.com" />
+              <label className="text-[10px] uppercase tracking-widest font-black text-gray-400">Email Address</label>
+              <input required value={email} onChange={e => setEmail(e.target.value)} type="email" className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-brand-green focus:bg-white transition-colors" placeholder="user@example.com" />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-[10px] uppercase tracking-widest font-black text-gray-400">Phone Number</label>
+              <input required value={phone} onChange={e => setPhone(e.target.value)} type="tel" className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-brand-green focus:bg-white transition-colors" placeholder="+212 ..." />
             </div>
 
             <div className="space-y-2">
               <label className="text-[10px] uppercase tracking-widest font-black text-gray-400">Password</label>
-              <input required value={password} onChange={e => setPassword(e.target.value)} type="password" className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-brand-green focus:bg-white transition-colors" placeholder="••••••••" />
+              <input required minLength={6} value={password} onChange={e => setPassword(e.target.value)} type="password" className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-brand-green focus:bg-white transition-colors" placeholder="••••••••" />
             </div>
 
             {role === 'chef' && (
               <div className="space-y-2 pt-2">
                 <label className="text-[10px] uppercase tracking-widest font-black text-gray-400 flex items-center justify-between">
                   <span>Identity Verification</span>
-                  {idUploaded && <span className="text-brand-green">Verified</span>}
+                  {idUploaded && <span className="text-brand-green">Attached</span>}
                 </label>
                 
                 <input 
@@ -130,17 +172,14 @@ Password: ${password}
                   {isUploading ? (
                     <div className="flex flex-col items-center justify-center gap-3 py-2">
                       <Loader2 className="w-8 h-8 text-brand-green animate-spin" />
-                      <span className="text-sm font-bold text-gray-700">Encrypting & Uploading ID...</span>
-                      <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 overflow-hidden">
-                        <div className="bg-brand-green h-1.5 rounded-full animate-[pulse_1s_ease-in-out_infinite]" style={{ width: '60%' }}></div>
-                      </div>
+                      <span className="text-sm font-bold text-gray-700">Attaching ID...</span>
                     </div>
                   ) : idUploaded ? (
                     <div className="flex flex-col items-center gap-2 text-brand-green relative z-10">
                       <div className="bg-white rounded-full p-2 shadow-sm mb-1">
                         <CheckCircle2 className="w-8 h-8 text-brand-green" />
                       </div>
-                      <span className="text-sm font-bold text-gray-900">ID Uploaded Successfully</span>
+                      <span className="text-sm font-bold text-gray-900">ID Attached</span>
                       <span className="text-xs font-semibold text-gray-500 bg-white/60 px-3 py-1 rounded-full truncate max-w-[200px] border border-gray-100">{idFileName}</span>
                       <button 
                         type="button" 
@@ -148,6 +187,7 @@ Password: ${password}
                           e.stopPropagation();
                           setIdUploaded(false);
                           setIdFileName('');
+                          tempRegistrationStore.idFile = null;
                           if (fileInputRef.current) fileInputRef.current.value = '';
                         }}
                         className="text-[10px] uppercase tracking-wider font-bold text-red-500 hover:text-red-600 mt-2 hover:underline"
@@ -169,8 +209,8 @@ Password: ${password}
               </div>
             )}
 
-            <button type="submit" className="w-full bg-brand-primary text-gray-900 font-black shadow-[0_4px_14px_rgba(255,204,0,0.4)] py-4 rounded-2xl mt-6 hover:scale-[1.02] active:scale-[0.98] transition-all flex justify-center items-center gap-2">
-              {role === 'chef' ? 'Continue to Build Profile' : 'Create Account'} <ArrowRight className="w-4 h-4" />
+            <button disabled={isSubmitting} type="submit" className="w-full disabled:opacity-70 disabled:hover:scale-100 bg-brand-primary text-gray-900 font-black shadow-[0_4px_14px_rgba(255,204,0,0.4)] py-4 rounded-2xl mt-6 hover:scale-[1.02] active:scale-[0.98] transition-all flex justify-center items-center gap-2">
+              {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{role === 'chef' ? 'Continue to Build Profile' : 'Create Account'} <ArrowRight className="w-4 h-4" /></>}
             </button>
           </form>
 
