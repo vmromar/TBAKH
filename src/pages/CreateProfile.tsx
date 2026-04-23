@@ -25,7 +25,7 @@ export default function CreateProfile() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
+    if (!email) {
       setError("Missing account details. Please start over from the registration page.");
       return;
     }
@@ -34,14 +34,18 @@ export default function CreateProfile() {
     setIsSubmitting(true);
 
     try {
-      // 1. Create the Auth account
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
       // 2. Add extra chef data to Firestore
+      // We don't create Auth here anymore because it was created in the Register step with Google
+      // User is already logged in at this point if they reached this screen, but just in case:
+      if (!auth.currentUser) {
+         throw new Error("Authentication state lost. Please log in again.");
+      }
+      
+      const user = auth.currentUser;
+      
       await setDoc(doc(db, 'users', user.uid), {
-        name,
-        email,
+        name: user.displayName || name || '',
+        email: user.email || email,
         phone: tempRegistrationStore.phone,
         role: 'chef',
         createdAt: new Date().toISOString(),
@@ -52,13 +56,13 @@ export default function CreateProfile() {
           priceRange: { min: Number(minPrice), max: Number(maxPrice) },
           about
         }
-      });
+      }, { merge: true });
 
       // 3. Send email to Admin
       try {
         const formData = new FormData();
-        formData.append('name', name);
-        formData.append('email', email);
+        formData.append('name', user.displayName || name || '');
+        formData.append('email', user.email || email);
         formData.append('phone', tempRegistrationStore.phone);
         formData.append('city', city);
         formData.append('specialties', specialties);
@@ -84,6 +88,7 @@ export default function CreateProfile() {
       updateUserContext({
           uid: user.uid,
            email: user.email || '',
+           name: user.displayName || name || '',
            role: 'chef',
            identifier: user.email || ''
       });

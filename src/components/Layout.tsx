@@ -58,11 +58,11 @@ export default function Layout() {
             {loading ? (
                 <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
             ) : user ? (
-                <Link to="/personal" className="text-sm font-bold text-gray-900 hover:text-brand-green transition-colors flex items-center gap-2">
+                <Link to={user.role === 'chef' ? "/dashboard" : "/personal"} className="text-sm font-bold text-gray-900 hover:text-brand-green transition-colors flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-brand-green/10 text-brand-green flex items-center justify-center">
                     <User className="w-4 h-4" />
                   </div>
-                  My Account
+                  {user.role === 'chef' ? 'My Dashboard' : 'My Account'}
                 </Link>
             ) : (
               <>
@@ -170,12 +170,12 @@ export default function Layout() {
                <span className="text-[10px] uppercase font-bold">Profile</span>
              </div>
         ) : user ? (
-           <Link to="/personal" className={cn("flex flex-col items-center gap-1", location.pathname === '/personal' ? "text-brand-green" : "text-gray-400")}>
+           <Link to={user.role === 'chef' ? "/dashboard" : "/personal"} className={cn("flex flex-col items-center gap-1", (location.pathname === '/personal' || location.pathname === '/dashboard') ? "text-brand-green" : "text-gray-400")}>
             <div className="relative">
               <User className="w-6 h-6" />
               <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-brand-primary border-2 border-white rounded-full"></div>
             </div>
-            <span className="text-[10px] uppercase font-bold">Profile</span>
+            <span className="text-[10px] uppercase font-bold">{user.role === 'chef' ? 'Orders' : 'Profile'}</span>
           </Link>
         ) : (
           <Link to="/login" className={cn("flex flex-col items-center gap-1", location.pathname === '/login' ? "text-brand-green" : "text-gray-400")}>

@@ -6,6 +6,7 @@ import { doc, getDoc } from 'firebase/firestore';
 interface User {
   uid: string;
   email: string;
+  name?: string;
   role: 'client' | 'chef';
   identifier: string; // Keep for backward compatibility 
 }
@@ -40,14 +41,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Fetch user metadata from Firestore to get their role
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           let role: 'client' | 'chef' = 'client';
+          let name = '';
           
           if (userDoc.exists()) {
             role = userDoc.data().role || 'client';
+            name = userDoc.data().name || '';
           }
           
           setUser({
             uid: firebaseUser.uid,
             email: firebaseUser.email || '',
+            name,
             role,
             identifier: firebaseUser.email || ''
           });

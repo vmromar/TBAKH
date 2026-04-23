@@ -75,12 +75,13 @@ export default function Register() {
         // Set the context manually to ensure immediate redirect
         updateUserContext({
            uid: user.uid,
+           name: user.displayName || '',
            email: user.email || '',
            role: 'client',
            identifier: user.email || ''
         });
 
-        navigate('/');
+        navigate('/personal');
       }
     } catch (err: any) {
       console.error(err);

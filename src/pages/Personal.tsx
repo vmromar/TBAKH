@@ -29,7 +29,7 @@ export default function Personal() {
       <div className="flex items-center justify-between mb-8 pb-8 border-b border-gray-100">
         <div>
           <h1 className="text-3xl font-black mb-2 tracking-tight text-gray-900">Welcome Back</h1>
-          <p className="text-gray-500 font-bold uppercase tracking-wider text-xs">Logged in as {user.email || user.identifier}</p>
+          <p className="text-gray-500 font-bold uppercase tracking-wider text-xs">Logged in as {user.name || user.email || user.identifier}</p>
         </div>
         <button 
           onClick={logout} 
