@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, MapPin, Navigation, Search } from "lucide-react";
+import { X, MapPin, Navigation, Search, CheckCircle2 } from "lucide-react";
 import { useLocationContext } from "../context/LocationContext";
 import { CHEFS } from "../data/mockData";
 
@@ -8,6 +8,7 @@ const UNIQUE_LOCATIONS = Array.from(new Set(CHEFS.map(c => c.location.trim())));
 export default function LocationModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const { currentLocation, setCurrentLocation, detectLocation, isDetecting } = useLocationContext();
   const [search, setSearch] = useState("");
+  const [justDetected, setJustDetected] = useState(false);
 
   if (!isOpen) return null;
 
@@ -16,6 +17,19 @@ export default function LocationModal({ isOpen, onClose }: { isOpen: boolean, on
   const handleSelect = (loc: string) => {
     setCurrentLocation(loc);
     onClose();
+  };
+
+  const handleDetect = async () => {
+     try {
+         await detectLocation();
+         setJustDetected(true);
+         setTimeout(() => {
+             setJustDetected(false);
+             onClose();
+         }, 1500);
+     } catch (e) {
+         // errors are alerted in the context
+     }
   };
 
   return (
@@ -34,23 +48,29 @@ export default function LocationModal({ isOpen, onClose }: { isOpen: boolean, on
         </div>
 
         <div className="p-5 overflow-y-auto">
-          {/* Detect Location Button */}
-          <button 
-            onClick={() => {
-                detectLocation();
-                setTimeout(onClose, 1000);
-            }} 
-            disabled={isDetecting}
-            className="w-full flex items-center gap-3 bg-brand-primary/10 text-yellow-800 p-4 rounded-2xl mb-6 hover:bg-brand-primary/20 transition-colors border border-brand-primary/20"
-          >
-            <div className="bg-white p-2 rounded-full shadow-sm text-brand-primary">
-                <Navigation className={`w-5 h-5 ${isDetecting ? 'animate-pulse' : ''}`} />
+          {justDetected ? (
+            <div className="mb-6 p-4 bg-brand-green/10 text-brand-green rounded-2xl flex items-center gap-3 border border-brand-green/20">
+              <CheckCircle2 className="w-5 h-5 shrink-0" />
+              <div className="text-sm">
+                 <span className="font-black block">Location Detected</span>
+                 <span className="font-medium opacity-90">{currentLocation}</span>
+              </div>
             </div>
-            <div className="text-left flex-1">
-                <span className="block font-black text-sm">{isDetecting ? "Detecting..." : "Use current location"}</span>
-                <span className="block text-xs font-bold opacity-70">Automatic GPS detection</span>
-            </div>
-          </button>
+          ) : (
+            <button 
+              onClick={handleDetect} 
+              disabled={isDetecting}
+              className="w-full flex items-center gap-3 bg-brand-primary/10 text-yellow-800 p-4 rounded-2xl mb-6 hover:bg-brand-primary/20 transition-colors border border-brand-primary/20"
+            >
+              <div className="bg-white p-2 rounded-full shadow-sm text-brand-primary">
+                  <Navigation className={`w-5 h-5 ${isDetecting ? 'animate-pulse' : ''}`} />
+              </div>
+              <div className="text-left flex-1">
+                  <span className="block font-black text-sm">{isDetecting ? "Detecting your location..." : "📍 Use my location"}</span>
+                  <span className="block text-xs font-bold opacity-70">Automatic GPS detection</span>
+              </div>
+            </button>
+          )}
 
           <div className="relative mb-4">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />

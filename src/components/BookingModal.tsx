@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Calendar as CalendarIcon, MapPin, Users, CheckCircle, Minus, Plus, Loader2 } from "lucide-react";
 import { Chef } from "../data/mockData";
 import { useBookings } from "../context/BookingsContext";
+import { useLocationContext } from "../context/LocationContext";
 
 export default function BookingModal({ chef, isOpen, onClose }: { chef: Chef, isOpen: boolean, onClose: () => void }) {
+  const { currentLocation } = useLocationContext();
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [guests, setGuests] = useState("50");
@@ -11,11 +13,18 @@ export default function BookingModal({ chef, isOpen, onClose }: { chef: Chef, is
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [locationStr, setLocationStr] = useState("");
+  const [locationStr, setLocationStr] = useState(currentLocation ? currentLocation.split(',')[0].trim() : "");
   const [priceOffer, setPriceOffer] = useState(chef.priceRange.min);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const { addBooking } = useBookings();
+
+  // Keep locationStr in sync if currentLocation changes in the background
+  useEffect(() => {
+    if (currentLocation) {
+        setLocationStr(currentLocation.split(',')[0].trim());
+    }
+  }, [currentLocation]);
 
   if (!isOpen) return null;
 
